@@ -188,6 +188,7 @@ function drawPoint(x, y, color, delta = 4) {
   context.fillStyle = color ? 'green' : 'red';
   context.fill();
   context.stroke();
+  //context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawPointNewPage(x, y, r, color) {

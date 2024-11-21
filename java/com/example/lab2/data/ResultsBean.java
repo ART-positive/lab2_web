@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class ResultsBean implements Serializable {
-    private List<Result> results;
+    private List<Result>  results;
 
     public ResultsBean() {
         this.results = new ArrayList<>();
@@ -124,5 +124,11 @@ public class ResultsBean implements Serializable {
         return "ResultsBean{" +
                 "results=" + results +
                 '}';
+    }
+
+    public void clearResults() {
+        if (results != null) {
+            results.clear();
+        }
     }
 }
