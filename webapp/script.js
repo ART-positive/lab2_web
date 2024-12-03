@@ -1,6 +1,6 @@
 function limitDigits(event) {
   const input = event.currentTarget;
-  const maxDigits = 8;
+  const maxDigits = 6;
   if (input.value.length > maxDigits) {
     input.value = input.value.slice(0, maxDigits);
   }
@@ -17,6 +17,13 @@ const timeOptions = {
   minute: 'numeric',
   second: 'numeric',
 };
+
+let resultsCount = 0;
+function updateResultsCount() {
+  resultsCount++;
+  const resultsCountElement = document.getElementById('resultsCount');
+  resultsCountElement.textContent = resultsCount.toString();
+}
 
 function populateTable(data) {
   const tableBody = document.querySelector('.table-body');
@@ -45,6 +52,7 @@ function populateTable(data) {
     row.appendChild(cell);
   });
   tableBody.appendChild(row);
+  updateResultsCount();
 }
 
 const result = [];
@@ -86,7 +94,7 @@ function showNotification(message) {
   document.getElementById('notification-container').appendChild(notification);
   setTimeout(() => {
     document.getElementById('notification-container').removeChild(notification);
-  }, 5000);
+  }, 4000);
 }
 
 inputY.addEventListener('input', () => validateInput(inputY, minY, maxY));
@@ -124,30 +132,61 @@ function responseData(data) {
   }
 }
 
-document.getElementById('image').onclick = async function (event) {
-  if (!document.getElementById('r').reportValidity()) return;
-  const r = document.getElementById('r').value;
-  if (r) {
-    const globalCoordinate = event.target.getBoundingClientRect();
-    let x = event.clientX - globalCoordinate.left;
-    let y = event.clientY - globalCoordinate.top;
-    const coords = truePositionClick(x, y, r);
-    x = coords.x;
-    y = coords.y;
-    try {
-      const response = await sendRequest(x, y, r);
-      const data = await response.text();
-      const parsedData = JSON.parse(data);
-      responseData(parsedData);
-      drawPoint(event.clientX, event.clientY, parsedData.isHit);
-    } catch (error) {
-      showNotification(error.message);
-    }
-  } else {
-    showNotification('Радиус не указан!');
-  }
-};
+const image = document.getElementById('image');
+let lastActionTime = 0;
+let manyBadR = 0;
 
+function checkTime() {
+  const now = Date.now();
+  if (now - lastActionTime < 30) return false;
+  lastActionTime = now;
+  return true;
+}
+
+function checkR(r) {
+  if (!document.getElementById('r').reportValidity()) return false;
+  if (!r) {
+    manyBadR++;
+    if (manyBadR < 5) {
+      showNotification('Радиус не указан!');
+    }
+    if (manyBadR === 5) {
+      showNotification('Куда так много🤨!');
+    }
+    return false;
+  }
+  manyBadR = 0;
+  return true;
+}
+
+async function handleMouseAction(event) {
+  if (!checkTime()) return;
+  const r = document.getElementById('r').value;
+  if (!checkR(r)) return;
+  const globalCoordinate = event.target.getBoundingClientRect();
+  const x = event.clientX - globalCoordinate.left;
+  const y = event.clientY - globalCoordinate.top;
+  const coords = truePositionClick(x, y, r);
+  try {
+    const response = await sendRequest(coords.x, coords.y, r);
+    const data = await response.text();
+    const parsedData = JSON.parse(data);
+    responseData(parsedData);
+    drawPoint(event.clientX, event.clientY, parsedData.isHit);
+  } catch (error) {
+    showNotification(error.message);
+  }
+}
+
+image.addEventListener('mousemove', async (event) => {
+  if (event.shiftKey) {
+    await handleMouseAction(event);
+  }
+});
+
+image.addEventListener('click', async (event) => {
+  await handleMouseAction(event);
+});
 async function sendRequest(x, y, r) {
   const formData = new FormData();
   formData.append('x', x.toString());
@@ -163,10 +202,28 @@ async function sendRequest(x, y, r) {
   });
   if (!response.ok) {
     handleError(response.status);
-    throw new Error(`Ошибка ${response.status}`);
+    throw new Error(`Ошибка: ${response.statusText}`);
   }
   return response;
 }
+
+document.getElementById('clearData').onclick = async function (event) {
+  const response = await fetch('/lab2/', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) handleError(response.status);
+  else document.cookie = 'dataCleared=true; path=/; max-age=3600';
+  window.location.reload();
+};
+window.onload = function () {
+  if (document.cookie.indexOf('dataCleared=true') !== -1) {
+    showNotification('Данные успешно очищены');
+    document.cookie = 'dataCleared=; path=/; max-age=0'; // Удаляем cookie
+  }
+};
 
 function truePositionClick(x, y, r) {
   x -= 200; // x - 200 = центр
@@ -188,7 +245,6 @@ function drawPoint(x, y, color, delta = 4) {
   context.fillStyle = color ? 'green' : 'red';
   context.fill();
   context.stroke();
-  //context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawPointNewPage(x, y, r, color) {
@@ -199,3 +255,38 @@ function drawPointNewPage(x, y, r, color) {
   y += 339;
   drawPoint(x, y, color);
 }
+
+const months = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
+
+function getDayName(day) {
+  switch (day) {
+    case 0: return 'Воскресенье';
+    case 1: return 'Понедельник';
+    case 2: return 'Вторник';
+    case 3: return 'Среда';
+    case 4: return 'Четверг';
+    case 5: return 'Пятница';
+    case 6: return 'Суббота';
+    default: return 'Неизвестный день';
+  }
+}
+
+function updateDateTime() {
+  const time = new Date();
+  const thisMonth = months[time.getMonth()];
+  const date = time.getDate();
+  const thisYear = time.getFullYear();
+  const day = time.getDay();
+
+  document.getElementById('date').textContent = `${date} ${thisMonth} ${thisYear} года - ${getDayName(day)}`;
+
+  const clockData = document.getElementById('clockData');
+  clockData.innerHTML = time.toLocaleTimeString('ru-RU');
+}
+
+setInterval(updateDateTime, 1000);
+updateDateTime();
+
+

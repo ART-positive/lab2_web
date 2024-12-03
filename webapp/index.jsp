@@ -25,7 +25,9 @@
         <img src="image.jpg" id="image" alt="Описание картинки">
         <canvas id="canvas" width="600" height="600" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
         <div>
-            <h2>Результаты</h2>
+            <h2 class="results-header">
+                Результаты (<span id="resultsCount">0</span>):
+            </h2>
             <div id="resultsTableContainer">
                 <div id="resultsTable">
                     <div class="table-header">
@@ -66,6 +68,14 @@
 
             <button type="submit">Отправить</button>
         </form>
+            <button id="clearData" >Очистить данные</button>
+    </div>
+    <div class="center">
+        <span class="highlight">Текущее время:</span>
+        <span class="date-time">
+        <span id="date"></span>
+        (<span id="clockData" class="time"></span>)
+    </span>
     </div>
 </div>
 <script src="script.js"></script>

@@ -32,9 +32,9 @@ public class ResultsBean implements Serializable {
 
 
         public Result(String x, String y, String r, boolean isHit, long currentTimeMillis, long nanoTime) {
-            this.x = x;
-            this.y = y;
-            this.r = r;
+            this.x = x.length() > 8 ? x.substring(0, 8) : x;
+            this.y = y.length() > 8 ? y.substring(0, 8) : y;
+            this.r = r.length() > 8 ? r.substring(0, 8) : r;
             this.isHit = isHit;
             this.currentTimeMillis = currentTimeMillis;
             this.nanoTime = nanoTime;

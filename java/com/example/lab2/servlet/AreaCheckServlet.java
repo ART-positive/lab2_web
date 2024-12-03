@@ -10,6 +10,8 @@ import com.example.lab2.exception.CustomException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Objects;
 
 //@WebServlet(name = "AreaCheckServlet", value = "/AreaCheckServlet")
@@ -25,13 +27,13 @@ public class AreaCheckServlet extends HttpServlet {
             }
             else {
                 PrintHtml.htmlPointViewer(response, result, System.nanoTime() - startTime);
-                //request.getRequestDispatcher("/result.jsp").forward(request, response);
             }
         }
         catch (NumberFormatException e) {
             ErrorHandler.handleBadRequest(response, "Invalid number format : " + e.getMessage());
         }
         catch (CustomException e) {
+            //response.sendRedirect("/index.jsp");
             ErrorHandler.handleBadRequest(response, "Custom exception : " + e.getMessage());
         } catch (Exception e) {
             ErrorHandler.handleInternalError(response);
@@ -149,7 +151,7 @@ class PrintHtml {
         out.println("<p>Координаты точки: (" + result[0] + ", " + result[1] + ")</p>");
         out.println("<p>Радиус области: " + result[2] + "</p>");
         out.println("<p>Попадание в область: " + (HitChecker.checkResult(result[0], result[1], result[2]) ? "Да" : "Нет") + "</p>");
-        out.println("<p>Текущее время: " + System.currentTimeMillis() + "</p>");
+        out.println("<p>Текущее время: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis())) + "</p>");
         out.println("<p>Время выполнения запроса: " + nanoTime + " нс</p>");
         out.println("<a href=\"index.jsp\">Назад</a>");
         out.println("</div>");
@@ -170,6 +172,8 @@ class ParameterValidator {
         float x = Float.parseFloat(xString);
         float y = Float.parseFloat(yString);
         float r = Float.parseFloat(rString);
+        if(Math.abs(x) > 6 || Math.abs(y) > 6 || r > 4 || r < 0)
+            throw new CustomException("Ну и зачем нам такие данные🤨??");
         return new float[] {x, y, r};
     }
 }
